@@ -2,6 +2,7 @@ import React, { useContext, useState } from "react";
 import { Link } from "react-router-dom";
 import UserContext from "contexts/UserContext";
 import TrackLocationWidget from "components/TrackLocationWidget";
+import short from "short-uuid";
 
 const AccountDetails = () => {
   const { user } = useContext(UserContext);
@@ -55,7 +56,12 @@ const AccountDetails = () => {
                 <span
                   className="underline cursor-pointer text-primary text-bold"
                   onClick={() => {
-                    setTrackingDetails([{ location: "", times: [""] }]);
+                    setTrackingDetails([
+                      {
+                        location: { id: short.generate(), value: "" },
+                        times: [{ id: short.generate(), value: "" }],
+                      },
+                    ]);
                   }}
                 >
                   Track Some

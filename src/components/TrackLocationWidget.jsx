@@ -3,36 +3,44 @@ import TextField from "./TextField";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddAlertIcon from "@mui/icons-material/AddAlert";
 import { useSnackbar } from "notistack";
+import short from "short-uuid";
+import Loader from "components/Loader";
 
 const TrackLocationWidget = ({ trackingDetails, setTrackingDetails }) => {
-  const subs_plan = "free";
+  const subs_plan = "dove";
 
   const [showTimeFields, setShowTimeFields] = useState(false);
+  const [fetching, setFetching] = useState(true);
 
   const { enqueueSnackbar } = useSnackbar();
 
   // Add an alert time for a location
   const addNewLocationTime = (locationId) => {
+    if (fetching) return false;
+    const locationTimes = trackingDetails.filter(
+      (trackingDetail) => trackingDetail.location.id === locationId
+    )[0].times;
+
     /**
      * Check if users subscription plan permits adding another alert time
      * START
      */
     // Checking for free plan
-    if (subs_plan === "free" && trackingDetails[locationId].times.length === 1)
+    if (subs_plan === "free" && locationTimes.length === 1)
       return enqueueSnackbar(
         "You only add 1 alert per-location for a free account. Upgrade subscription to add more.",
         { variant: "warning" }
       );
 
     // Checking for dove plan
-    if (subs_plan === "dove" && trackingDetails[locationId].times.length === 2)
+    if (subs_plan === "dove" && locationTimes.length === 2)
       return enqueueSnackbar(
         "You can add a max of 2 alerts per-location for a dove account. Upgrade subscription to add more.",
         { variant: "warning" }
       );
 
     // Checking for Lion plan
-    if (subs_plan === "lion" && trackingDetails[locationId].times.length === 4)
+    if (subs_plan === "lion" && locationTimes.length === 4)
       return enqueueSnackbar(
         "You have reached the maximum alerts Weather Buddy offers.",
         { variant: "info" }
@@ -44,21 +52,28 @@ const TrackLocationWidget = ({ trackingDetails, setTrackingDetails }) => {
      */
 
     // Get the location details for the location the user want to add an alert time to at the call of the function
-    const locationToAddTime = trackingDetails[locationId];
+    const locationToAddTime = trackingDetails.filter(
+      (trackingDetail) => trackingDetail.location.id === locationId
+    )[0];
 
     // Get the locations that the user isn't adding any time to at the call of the function
     const locationsNotToAddTime = trackingDetails.filter(
-      (_, i) => i !== locationId
+      (trackingDetail) => trackingDetail.location.id !== locationId
     );
 
     // Add an empty string to the times-array of the location the user wants to add a new time to at the function call.
-    // locationsNotToAddTime.times = [...locationToAddTime.times, ""];
-    locationToAddTime.times.push("");
+    locationToAddTime.times.push({
+      id: short.generate(),
+      value: "",
+    });
+
+    // Get the index of the location that is to be changed
+    const indexOfChangingLocation = trackingDetails.findIndex(
+      (trackingDetail) => trackingDetail.location.id === locationId
+    );
 
     // Add the newly update location, which a new alert time was added to it, at EXACTLY the position it was retrieved from
-    locationsNotToAddTime.splice(locationId, 0, locationToAddTime);
-
-    console.log(locationsNotToAddTime);
+    locationsNotToAddTime.splice(indexOfChangingLocation, 0, locationToAddTime);
 
     // Set the new tracking details
     setTrackingDetails(locationsNotToAddTime);
@@ -66,31 +81,37 @@ const TrackLocationWidget = ({ trackingDetails, setTrackingDetails }) => {
 
   // Delete an alert time for a location
   const deleteLocationTime = (locationId, timeId) => {
+    if (fetching) return false;
+    const locationTimes = trackingDetails.filter(
+      (trackingDetail) => trackingDetail.location.id === locationId
+    )[0].times;
+
     // Prevent user from deleting all the time-inputting-textFields
-    if (trackingDetails[locationId].times.length === 1)
+    if (locationTimes.length === 1)
       return enqueueSnackbar("An alert time is required", { variant: "error" });
 
     // Get the location that contains the time Oge wants to delete
-    const locationToRemoveTime = trackingDetails[locationId];
+    const locationToRemoveTime = trackingDetails.filter(
+      (trackingDetail) => trackingDetail.location.id === locationId
+    )[0];
 
     // Get the locations that contains times Oge isn't going to delete.
     const locationsToNotRemoveTime = trackingDetails.filter(
-      (_, i) => i !== locationId
+      (trackingDetail) => trackingDetail.location.id !== locationId
     );
 
     // Remove the time to be deleted from the list of times in the to-alter-location
-    locationToRemoveTime.times = locationToRemoveTime.times.filter(
-      (_, timeIndex) => timeIndex !== timeId
+    locationToRemoveTime.times = locationTimes.filter(
+      (timeDetail) => timeDetail.id !== timeId
     );
 
     // Set the state for the new tracking details
     setTrackingDetails([...locationsToNotRemoveTime, locationToRemoveTime]);
-
-    console.log({ locationToRemoveTime, locationsToNotRemoveTime });
   };
 
   // Add a new location to track
   const addLocation = (locationId) => {
+    if (fetching) return false;
     /**
      * Check if users subscription plan permits adding another alert time
      * START ----------
@@ -115,14 +136,21 @@ const TrackLocationWidget = ({ trackingDetails, setTrackingDetails }) => {
      */
 
     // Add a new location to the list of locations being tracked
-    setTrackingDetails((prev) => [...prev, { location: "", times: [""] }]);
+    setTrackingDetails((prev) => [
+      ...prev,
+      {
+        location: { id: short.generate(), value: "" },
+        times: [{ id: short.generate(), value: "" }],
+      },
+    ]);
   };
 
   // Delete a location to track
   const deleteLocation = (locationId) => {
+    if (fetching) return false;
     // Remove the location to be deleted from the list
     const newTrackingDetails = trackingDetails.filter(
-      (_, locationIndex) => locationIndex !== locationId
+      (trackingDetail) => trackingDetail.location.id !== locationId
     );
 
     // Set the new tracking details
@@ -130,23 +158,34 @@ const TrackLocationWidget = ({ trackingDetails, setTrackingDetails }) => {
   };
 
   const handleChange = (type, value, inputId) => {
-    // Get the location that is being edited from the list of locations
-    const locationBeingEdited = trackingDetails[inputId.locationId];
+    if (fetching) return false;
+    const { locationId, timeId } = inputId;
 
-    // Update the location with the changes
-    locationBeingEdited.location = value;
+    // Get the location that is being edited from the list of locations
+    const locationBeingEdited = trackingDetails[locationId];
+
+    // Update the location or time with the changes
+    if (timeId !== null && timeId !== undefined) {
+      locationBeingEdited.times[timeId].value = value;
+    } else {
+      locationBeingEdited.location.value = value;
+    }
 
     // Set the new tracking details
     setTrackingDetails((prev) => [
-      ...prev.filter((_, id) => id !== inputId.locationId),
+      ...prev.filter((_, id) => {
+        return id !== inputId.locationId;
+      }),
       locationBeingEdited,
     ]);
   };
 
-  const handleLocationChange = () => {};
+  const handleSubmit = () => {
+    // Submit the new tracking details to backend
+  };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 relative">
       {trackingDetails.map((trackingDetail, x) => (
         <div className="w-1/2" key={x}>
           {/* Add locations to track */}
@@ -161,9 +200,10 @@ const TrackLocationWidget = ({ trackingDetails, setTrackingDetails }) => {
                 <div className="flex-1">
                   <TextField
                     title={`Location ${x + 1}`}
-                    value={trackingDetail.location}
-                    inputId={{ locationId: x, type: "location" }}
+                    value={trackingDetail.location.value}
+                    inputId={{ locationId: x }}
                     handleChange={handleChange}
+                    disabled={fetching}
                   />
                 </div>
 
@@ -177,7 +217,7 @@ const TrackLocationWidget = ({ trackingDetails, setTrackingDetails }) => {
                 )}
 
                 <DeleteIcon
-                  onClick={() => deleteLocation(x)}
+                  onClick={() => deleteLocation(trackingDetail.location.id)}
                   className="text-red-500 cursor-pointer"
                 />
               </div>
@@ -197,9 +237,10 @@ const TrackLocationWidget = ({ trackingDetails, setTrackingDetails }) => {
                   <div className="flex-1">
                     <TextField
                       title={`Time ${i + 1}`}
-                      value={time}
-                      inputId={{ locationId: x, timeId: i, type: "time" }}
+                      value={time.value}
+                      inputId={{ locationId: x, timeId: i }}
                       handleChange={handleChange}
+                      disabled={fetching}
                     />
                   </div>
 
@@ -207,14 +248,14 @@ const TrackLocationWidget = ({ trackingDetails, setTrackingDetails }) => {
                     <AddAlertIcon
                       className="text-green-500 cursor-pointer"
                       onClick={() => {
-                        addNewLocationTime(x);
+                        addNewLocationTime(trackingDetail.location.id);
                       }}
                     />
                   )}
 
                   <DeleteIcon
                     onClick={() => {
-                      deleteLocationTime(x, i);
+                      deleteLocationTime(trackingDetail.location.id, time.id);
                     }}
                     className="text-red-500 cursor-pointer"
                   />
@@ -224,6 +265,16 @@ const TrackLocationWidget = ({ trackingDetails, setTrackingDetails }) => {
           </div>
         </div>
       ))}
+
+      <button
+        disabled={fetching}
+        className={`px-4 h-10 rounded-lg text-center text-sm ${
+          fetching ? "bg-gray-400" : "bg-secondary"
+        } text-white font-black grid place-content-center uppercase absolute right-0 bottom-0`}
+        onClick={handleSubmit}
+      >
+        {fetching ? <Loader fill="white" /> : "Save"}
+      </button>
     </div>
   );
 };
