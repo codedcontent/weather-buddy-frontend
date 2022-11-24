@@ -8,7 +8,8 @@ const TextField = ({
   type,
   error,
   disabled,
-  inputId
+  inputId,
+  handleClick,
 }) => {
   const [inputActive, setInputActive] = useState(false);
 
@@ -28,7 +29,11 @@ const TextField = ({
   }, []);
 
   return (
-    <div>
+    <div
+      onClick={() => {
+        handleClick();
+      }}
+    >
       <div
         className={`px-3 py-3.5 flex gap-3 justify-center items-center bg-white rounded-lg w-full ${focusedStyle} ${errorStyle}`}
       >

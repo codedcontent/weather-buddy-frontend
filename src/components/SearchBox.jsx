@@ -56,6 +56,7 @@ const SearchBox = ({ closeSearchBox, getWeatherDetails }) => {
     setSearching(false);
   }, []);
 
+  // Run after a delay when the user is typing
   useEffect(() => {
     const timeoutId = setTimeout(async () => {
       if (form) {

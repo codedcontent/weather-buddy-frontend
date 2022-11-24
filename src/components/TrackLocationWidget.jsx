@@ -5,12 +5,14 @@ import AddAlertIcon from "@mui/icons-material/AddAlert";
 import { useSnackbar } from "notistack";
 import short from "short-uuid";
 import Loader from "components/Loader";
+import TrackingSuggestions from "./TrackingSuggestions";
 
 const TrackLocationWidget = ({ trackingDetails, setTrackingDetails }) => {
-  const subs_plan = "dove";
+  const subs_plan = "lion";
 
   const [showTimeFields, setShowTimeFields] = useState(false);
-  const [fetching, setFetching] = useState(true);
+  const [fetching, setFetching] = useState(false);
+  const [currentActiveInput, setCurrentActiveInput] = useState(null);
 
   const { enqueueSnackbar } = useSnackbar();
 
@@ -167,8 +169,14 @@ const TrackLocationWidget = ({ trackingDetails, setTrackingDetails }) => {
     // Update the location or time with the changes
     if (timeId !== null && timeId !== undefined) {
       locationBeingEdited.times[timeId].value = value;
+
+      // Show suggestions for the acceptable time values
+      setCurrentActiveInput({ locationId, timeId });
     } else {
       locationBeingEdited.location.value = value;
+
+      // Show suggestions for the acceptable location values
+      setCurrentActiveInput({ locationId });
     }
 
     // Set the new tracking details
@@ -189,24 +197,35 @@ const TrackLocationWidget = ({ trackingDetails, setTrackingDetails }) => {
       {trackingDetails.map((trackingDetail, x) => (
         <div className="w-1/2" key={x}>
           {/* Add locations to track */}
-          <div className="">
+          <div className="w-full">
             <p className="font-bold text-sm ml-3 text-primary">
               Type location you wish to track
             </p>
 
-            <div className="w-full mt-1 px-3">
+            <div className="w-full mt-1 ml-3 relative">
               {/* Text field for locations */}
-              <div className="flex gap-5 justify-between items-center w-full">
+              <div className="flex gap-5 justify-between items-center w-full ">
                 <div className="flex-1">
+                  {/* Textfield */}
                   <TextField
                     title={`Location ${x + 1}`}
-                    value={trackingDetail.location.value}
+                    value={
+                      !trackingDetail.location.value?.title
+                        ? trackingDetail.location.value
+                        : trackingDetail.location.value.title
+                    }
                     inputId={{ locationId: x }}
                     handleChange={handleChange}
                     disabled={fetching}
+                    handleClick={() =>
+                      setCurrentActiveInput({
+                        locationId: x,
+                      })
+                    }
                   />
                 </div>
 
+                {/* Add location */}
                 {trackingDetails.length === x + 1 && (
                   <AddAlertIcon
                     onClick={() => {
@@ -216,11 +235,25 @@ const TrackLocationWidget = ({ trackingDetails, setTrackingDetails }) => {
                   />
                 )}
 
+                {/* Delete location */}
                 <DeleteIcon
                   onClick={() => deleteLocation(trackingDetail.location.id)}
                   className="text-red-500 cursor-pointer"
                 />
               </div>
+
+              {/* The suggestions for the input fields */}
+              {currentActiveInput &&
+              JSON.stringify(currentActiveInput) ===
+                JSON.stringify({ locationId: x }) ? (
+                <TrackingSuggestions
+                  type="location"
+                  id={{ locationId: x }}
+                  setValue={handleChange}
+                  value={trackingDetail.location.value}
+                  handleVisibility={setCurrentActiveInput}
+                />
+              ) : null}
             </div>
           </div>
 
@@ -231,19 +264,25 @@ const TrackLocationWidget = ({ trackingDetails, setTrackingDetails }) => {
             </p>
 
             {trackingDetail.times.map((time, i) => (
-              <div className="ml-10 w-[60%]" key={i}>
-                {/* Text field for locations */}
+              <div className="ml-10 w-[60%] relative" key={i}>
                 <div className="flex gap-5 justify-between items-center w-full">
+                  {/* Time text field */}
                   <div className="flex-1">
                     <TextField
                       title={`Time ${i + 1}`}
                       value={time.value}
-                      inputId={{ locationId: x, timeId: i }}
-                      handleChange={handleChange}
+                      // handleChange={handleChange}
                       disabled={fetching}
+                      handleClick={() =>
+                        setCurrentActiveInput({
+                          locationId: x,
+                          timeId: i,
+                        })
+                      }
                     />
                   </div>
 
+                  {/* Add more button */}
                   {trackingDetail.times.length === i + 1 && (
                     <AddAlertIcon
                       className="text-green-500 cursor-pointer"
@@ -260,6 +299,19 @@ const TrackLocationWidget = ({ trackingDetails, setTrackingDetails }) => {
                     className="text-red-500 cursor-pointer"
                   />
                 </div>
+
+                {/* The suggestions for the input fields */}
+                {currentActiveInput &&
+                JSON.stringify(currentActiveInput) ===
+                  JSON.stringify({ locationId: x, timeId: i }) ? (
+                  <TrackingSuggestions
+                    type="time"
+                    id={{ locationId: x, timeId: i }}
+                    setValue={handleChange}
+                    handleVisibility={setCurrentActiveInput}
+                    listOfTimes={trackingDetail.times.map((time) => time.value)}
+                  />
+                ) : null}
               </div>
             ))}
           </div>
