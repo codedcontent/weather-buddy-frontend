@@ -58,7 +58,6 @@ function App() {
 
       const reverseGeoCodedResult = await getGeoCodedSearchResult({ lat, lon });
 
-
       setLocation({ lat, lon, title: reverseGeoCodedResult });
     };
 

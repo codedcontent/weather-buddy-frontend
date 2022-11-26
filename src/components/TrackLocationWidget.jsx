@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import TextField from "./TextField";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddAlertIcon from "@mui/icons-material/AddAlert";
@@ -6,9 +6,24 @@ import { useSnackbar } from "notistack";
 import short from "short-uuid";
 import Loader from "components/Loader";
 import TrackingSuggestions from "./TrackingSuggestions";
+import UserContext from "contexts/UserContext";
+import axios from "api/axios";
+
+// TODO: There's something wrong with the location inputs
+/**
+ * Steps to recreate
+ * Go to my-account page
+ * Try to add new tracking locations consecutively without adding values to them
+ * The start typing on the first input fields
+ * The UI should start behaving wonky
+ */
 
 const TrackLocationWidget = ({ trackingDetails, setTrackingDetails }) => {
-  const subs_plan = "lion";
+  const { user } = useContext(UserContext);
+
+  // console.log(user);
+
+  const subs_plan = user?.subscription_plan;
 
   const [showTimeFields, setShowTimeFields] = useState(false);
   const [fetching, setFetching] = useState(false);
@@ -161,35 +176,57 @@ const TrackLocationWidget = ({ trackingDetails, setTrackingDetails }) => {
 
   const handleChange = (type, value, inputId) => {
     if (fetching) return false;
-    const { locationId, timeId } = inputId;
+
+    const { locationIndex, timeId } = inputId;
 
     // Get the location that is being edited from the list of locations
-    const locationBeingEdited = trackingDetails[locationId];
+    const locationBeingEdited = trackingDetails[locationIndex];
+
+    // Get the location not being edited from the list of locations
+    const locationsNotBeingEdited = trackingDetails.filter(
+      (_, index) => index !== locationIndex
+    );
 
     // Update the location or time with the changes
     if (timeId !== null && timeId !== undefined) {
       locationBeingEdited.times[timeId].value = value;
 
       // Show suggestions for the acceptable time values
-      setCurrentActiveInput({ locationId, timeId });
+      setCurrentActiveInput({ locationId: locationIndex, timeId });
     } else {
       locationBeingEdited.location.value = value;
 
       // Show suggestions for the acceptable location values
-      setCurrentActiveInput({ locationId });
+      setCurrentActiveInput({ locationIndex });
     }
 
-    // Set the new tracking details
-    setTrackingDetails((prev) => [
-      ...prev.filter((_, id) => {
-        return id !== inputId.locationId;
-      }),
-      locationBeingEdited,
-    ]);
+    locationsNotBeingEdited.splice(locationIndex, 0, locationBeingEdited);
+
+    setTrackingDetails(locationsNotBeingEdited);
   };
 
-  const handleSubmit = () => {
-    // Submit the new tracking details to backend
+  // Submit the new tracking details to backend
+  const handleSubmit = async () => {
+    // Disable users actions while making request to server
+    setFetching(true);
+
+    const { trackingDetails: tracks, ...userDetails } = user;
+
+    try {
+      const response = await axios.post("/weather", {
+        user: { userDetails, trackingDetails },
+      });
+
+      console.log(response.data);
+    } catch (error) {
+      const axiosError = error.response;
+      console.log({ axiosError });
+
+      if (axiosError.status === 400)
+        return enqueueSnackbar(axiosError.data.msg, { variant: "error" });
+    } finally {
+      setFetching(false);
+    }
   };
 
   return (
@@ -214,12 +251,12 @@ const TrackLocationWidget = ({ trackingDetails, setTrackingDetails }) => {
                         ? trackingDetail.location.value
                         : trackingDetail.location.value.title
                     }
-                    inputId={{ locationId: x }}
+                    inputId={{ locationIndex: x }}
                     handleChange={handleChange}
                     disabled={fetching}
                     handleClick={() =>
                       setCurrentActiveInput({
-                        locationId: x,
+                        locationIndex: x,
                       })
                     }
                   />
@@ -245,10 +282,10 @@ const TrackLocationWidget = ({ trackingDetails, setTrackingDetails }) => {
               {/* The suggestions for the input fields */}
               {currentActiveInput &&
               JSON.stringify(currentActiveInput) ===
-                JSON.stringify({ locationId: x }) ? (
+                JSON.stringify({ locationIndex: x }) ? (
                 <TrackingSuggestions
                   type="location"
-                  id={{ locationId: x }}
+                  id={{ locationIndex: x }}
                   setValue={handleChange}
                   value={trackingDetail.location.value}
                   handleVisibility={setCurrentActiveInput}
@@ -275,7 +312,7 @@ const TrackLocationWidget = ({ trackingDetails, setTrackingDetails }) => {
                       disabled={fetching}
                       handleClick={() =>
                         setCurrentActiveInput({
-                          locationId: x,
+                          locationIndex: x,
                           timeId: i,
                         })
                       }
@@ -303,10 +340,10 @@ const TrackLocationWidget = ({ trackingDetails, setTrackingDetails }) => {
                 {/* The suggestions for the input fields */}
                 {currentActiveInput &&
                 JSON.stringify(currentActiveInput) ===
-                  JSON.stringify({ locationId: x, timeId: i }) ? (
+                  JSON.stringify({ locationIndex: x, timeId: i }) ? (
                   <TrackingSuggestions
                     type="time"
-                    id={{ locationId: x, timeId: i }}
+                    id={{ locationIndex: x, timeId: i }}
                     setValue={handleChange}
                     handleVisibility={setCurrentActiveInput}
                     listOfTimes={trackingDetail.times.map((time) => time.value)}

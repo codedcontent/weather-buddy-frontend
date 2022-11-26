@@ -10,8 +10,6 @@ const TrackingSuggestions = ({
   handleVisibility,
   listOfTimes,
 }) => {
-  console.log({ id });
-
   const boxStyle =
     "h-screen w-2/5 text-white backdrop-blur-sm bg-black/30 px-5 py-2";
 
@@ -54,8 +52,7 @@ const TrackingSuggestions = ({
         const geoCodedResult = data.map((res) => ({
           title: `${res.name}, ${res.state ? res.state + "," : ""} ${
             res.country
-          }
-                `,
+          }`,
           cord: {
             lat: res.lat,
             long: res.lon,
@@ -90,7 +87,7 @@ const TrackingSuggestions = ({
     }, []);
 
     return (
-      <div className={`${boxStyle} h-max space-y-2 w-[80%]`}>
+      <div className={`${boxStyle} h-max mb-5 space-y-2 w-[80%]`}>
         {!locationSearchResults ? (
           <div className="w-full grid place-items-center">
             <Loader fill="white" />
@@ -104,7 +101,7 @@ const TrackingSuggestions = ({
                     className="font-extralight w-max  hover:underline cursor-pointer text-sm"
                     key={i}
                     onClick={() => {
-                      setValue("location", result, id);
+                      setValue(type, result, id);
                       handleVisibility(null);
                     }}
                   >
