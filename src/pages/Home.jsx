@@ -101,28 +101,30 @@ const Home = ({ appWeatherBg, appCurrentWeather, location }) => {
       )}
 
       {/* Weather details */}
-      <div className="flex gap-4 text-white items-center justify-center absolute bottom-4 left-4">
-        <p className="text-4xl">{Math.round(currentWeather?.temp)}℃</p>
+      {currentWeather?.temp && (
+        <div className="flex gap-4 text-white items-center justify-center absolute bottom-4 left-4">
+          <p className="text-4xl">{Math.round(currentWeather?.temp)}℃</p>
 
-        {/* Country and datetime */}
-        <div className="flex flex-col justify-start">
-          <p className="font-bold text-2xl">{currentWeather?.title}</p>
-          <p className="text-sm font-light">{time}</p>
-        </div>
+          {/* Country and datetime */}
+          <div className="flex flex-col justify-start">
+            <p className="font-bold text-2xl">{currentWeather?.title}</p>
+            <p className="text-sm font-light">{time}</p>
+          </div>
 
-        {/* Weather icon */}
-        <div className="flex flex-col justify-start">
-          {/* <p className="font-extralight"></p> */}
-          <img
-            src={`http://openweathermap.org/img/wn/${currentWeather?.icon}@2x.png`}
-            alt=""
-            className="w-10"
-          />
-          <p className="font-bold text-2xl capitalize">
-            {currentWeather?.description}
-          </p>
+          {/* Weather icon */}
+          <div className="flex flex-col justify-start">
+            {/* <p className="font-extralight"></p> */}
+            <img
+              src={`http://openweathermap.org/img/wn/${currentWeather?.icon}@2x.png`}
+              alt=""
+              className="w-10"
+            />
+            <p className="font-bold text-2xl capitalize">
+              {currentWeather?.description}
+            </p>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Search Box */}
       {searchBoxOpen && (
