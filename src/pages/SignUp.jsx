@@ -1,11 +1,23 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import editBackground from "assets/blues-aesthetic-unsplash.jpg";
 import TextField from "components/TextField";
 import Logo from "components/Logo";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import validateForm from "utils/validateForm";
+import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
+import { useSnackbar } from "notistack";
+import Loader from "components/Loader";
+import UserContext from "contexts/UserContext";
 
 const SignUp = () => {
+  const auth = getAuth();
+  const { setUser } = useContext(UserContext);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { enqueueSnackbar } = useSnackbar();
+
+  const from = location.state?.from?.pathname || "/";
+
   const [form, setForm] = useState({
     firstName: "oge",
     lastName: "meph",
@@ -13,7 +25,6 @@ const SignUp = () => {
     phoneNumber: "12345678910",
     password: "password",
   });
-
   const [error, setError] = useState({
     firstName: "",
     lastName: "",
@@ -21,8 +32,8 @@ const SignUp = () => {
     phoneNumber: "",
     password: "",
   });
-
   const [tosAccepted, setTosAccepted] = useState(true);
+  const [fetching, setFetching] = useState(false);
 
   const handleChange = (type, value) => {
     setForm((prev) => ({ ...prev, [type]: value }));
@@ -47,22 +58,28 @@ const SignUp = () => {
   };
 
   const signUp = async () => {
-    console.log("Signing Up");
+    setFetching(true);
 
     const url = `${process.env.REACT_APP_SERVER_URL}/users`;
 
-    const formDetails = {
-      first_name: form.firstName,
-      last_name: form.lastName,
-      email: form.email,
-      phone: form.phoneNumber,
-      password: form.password,
-    };
-
-    console.log(formDetails);
-
     try {
-      const fetchResp = await fetch(url, {
+      const user = await createUserWithEmailAndPassword(
+        auth,
+        form.email,
+        form.password
+      );
+
+      setUser(user.user);
+
+      const formDetails = {
+        first_name: form.firstName,
+        last_name: form.lastName,
+        phone: form.phoneNumber,
+        uid: user.user.uid,
+      };
+
+      // eslint-disable-next-line
+      await fetch(url, {
         body: JSON.stringify(formDetails),
         method: "POST",
         headers: {
@@ -70,10 +87,25 @@ const SignUp = () => {
           "Content-Type": "application/json",
         },
       });
-      const data = await fetchResp.text();
-      console.log(data);
+
+      enqueueSnackbar("Sign up successful!", { variant: "success" });
+
+      navigate(from, { replace: true });
     } catch (error) {
-      console.log({ error });
+      if (error.code) {
+        enqueueSnackbar(error.code, {
+          variant: "error",
+        });
+      } else {
+        enqueueSnackbar(
+          "Something went wrong on the server, try again later.",
+          {
+            variant: "error",
+          }
+        );
+      }
+    } finally {
+      setFetching(false);
     }
   };
 
@@ -105,55 +137,57 @@ const SignUp = () => {
           handleSubmit(e);
         }}
       >
-        {/* First name */}
-        <TextField
-          error={error.firstName}
-          title={"First name"}
-          type="firstName"
-          value={form.firstName}
-          handleChange={handleChange}
-          placeholder="Enter your first name"
-        />
+        <>
+          {/* First name */}
+          <TextField
+            error={error.firstName}
+            title={"First name"}
+            type="firstName"
+            value={form.firstName}
+            handleChange={handleChange}
+            placeholder="Enter your first name"
+          />
 
-        {/* Last name */}
-        <TextField
-          error={error.lastName}
-          title={"Last name"}
-          type="lastName"
-          value={form.lastName}
-          handleChange={handleChange}
-          placeholder="Enter your last name"
-        />
+          {/* Last name */}
+          <TextField
+            error={error.lastName}
+            title={"Last name"}
+            type="lastName"
+            value={form.lastName}
+            handleChange={handleChange}
+            placeholder="Enter your last name"
+          />
 
-        {/* Email address */}
-        <TextField
-          error={error.email}
-          title={"email address"}
-          type="email"
-          value={form.email}
-          handleChange={handleChange}
-          placeholder="Enter your email address"
-        />
+          {/* Email address */}
+          <TextField
+            error={error.email}
+            title={"email address"}
+            type="email"
+            value={form.email}
+            handleChange={handleChange}
+            placeholder="Enter your email address"
+          />
 
-        {/* phone number */}
-        <TextField
-          error={error.phoneNumber}
-          title={"Phone number"}
-          type="phoneNumber"
-          value={form.phoneNumber}
-          handleChange={handleChange}
-          placeholder="Enter your phone number"
-        />
+          {/* phone number */}
+          <TextField
+            error={error.phoneNumber}
+            title={"Phone number"}
+            type="phoneNumber"
+            value={form.phoneNumber}
+            handleChange={handleChange}
+            placeholder="Enter your phone number"
+          />
 
-        {/* Password address */}
-        <TextField
-          error={error.password}
-          title={"password"}
-          type="password"
-          value={form.password}
-          handleChange={handleChange}
-          placeholder="Enter your password"
-        />
+          {/* Password address */}
+          <TextField
+            error={error.password}
+            title={"password"}
+            type="password"
+            value={form.password}
+            handleChange={handleChange}
+            placeholder="Enter your password"
+          />
+        </>
 
         <label className="flex gap-2 ml-2">
           <input
@@ -180,9 +214,12 @@ const SignUp = () => {
 
         <button
           type="submit"
-          className="w-full h-10 rounded-b-lg text-center text-sm bg-secondary text-white font-black"
+          disabled={fetching}
+          className={`w-full h-10 rounded-b-lg text-center text-sm ${
+            fetching ? "bg-gray-400" : "bg-secondary"
+          } text-white font-black grid place-content-center uppercase`}
         >
-          SUBMIT
+          {fetching ? <Loader fill="white" /> : "Submit"}
         </button>
       </form>
     </div>

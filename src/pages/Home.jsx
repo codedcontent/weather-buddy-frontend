@@ -5,11 +5,14 @@ import SearchBox from "components/SearchBox";
 import weatherImages from "constants/weatherImages";
 import moment from "moment";
 
-const Home = ({ appWeatherBg, appCurrentWeather, location }) => {
-  const [weatherBg, setWeatherBg] = useState(appWeatherBg);
-  const [currentWeather, setCurrentWeather] = useState(appCurrentWeather);
+const Home = ({ location }) => {
+  const [weatherBg, setWeatherBg] = useState(weatherImages.loading);
+  const [currentWeather, setCurrentWeather] = useState({
+    temp: 0,
+    title: "Loading...",
+    description: "Loading...",
+  });
   const [searchBoxOpen, setSearchBoxOpen] = useState(false);
-
   const [time, setTime] = useState(moment().format("LLLL"));
 
   const closeSearchBox = () => {
@@ -44,11 +47,11 @@ const Home = ({ appWeatherBg, appCurrentWeather, location }) => {
   }, []);
 
   const getWeatherDetails = async (lat, long, title) => {
-    const apiKey = process.env.REACT_APP_OW_AK;
+    const openWeatherApiKey = process.env.REACT_APP_OW_AK;
     const exclude = ["alerts"];
 
     // Weather api url
-    const openWeatherMapUrl = `https://api.openweathermap.org/data/2.5/weather?units=metric&lat=${lat}&lon=${long}&exclude=${exclude}&appid=${apiKey}`;
+    const openWeatherMapUrl = `https://api.openweathermap.org/data/2.5/weather?units=metric&lat=${lat}&lon=${long}&exclude=${exclude}&appid=${openWeatherApiKey}`;
 
     try {
       const result = await fetch(openWeatherMapUrl);

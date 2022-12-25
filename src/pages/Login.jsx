@@ -6,28 +6,23 @@ import { Link } from "react-router-dom";
 import { useSnackbar } from "notistack";
 import UserContext from "contexts/UserContext";
 import Loader from "components/Loader";
-import axios from "api/axios";
-import useAuth from "hooks/useAuth";
 import { useLocation, useNavigate } from "react-router-dom";
+import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 
 const Login = () => {
+  const auth = getAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { enqueueSnackbar } = useSnackbar();
 
   const from = location.state?.from?.pathname || "/";
 
-  const { enqueueSnackbar } = useSnackbar();
   const { setUser } = useContext(UserContext);
-
-  const { setAuth } = useAuth();
-
   const [fetching, setFetching] = useState(false);
-
   const [form, setForm] = useState({
-    email: "alex.vause@gmail.com",
+    email: "ogescoc@gmail.com",
     password: "password",
   });
-
   const [error, setError] = useState({
     errorKey: "",
     errorValue: "",
@@ -44,58 +39,30 @@ const Login = () => {
     // Disable forms and buttons during axios request
     setFetching(true);
 
-    const LOGIN_URL = "/auth/login";
-
     try {
-      const response = await axios.post(LOGIN_URL, JSON.stringify(form), {
-        headers: {
-          "Content-Type": "application/json",
-        },
-        withCredentials: true,
-      });
+      const user = await signInWithEmailAndPassword(
+        auth,
+        form.email,
+        form.password
+      );
 
-      const accessToken = response?.data?.accessToken;
-      const refreshToken = response?.data?.refreshToken;
-
-      // Set global auth variable
-      setAuth({ accessToken, refreshToken });
       // Set global user variable
-      setUser({ ...response.data.user });
+      setUser({ ...user.user });
 
-      enqueueSnackbar(response.data.msg, { variant: "success" });
+      enqueueSnackbar("Login successful.", { variant: "success" });
 
       navigate(from, { replace: true });
     } catch (error) {
-      // If the server does not send any error
-      if (!error?.response)
-        return enqueueSnackbar("No response from server, try again later.", {
-          variant: "warning",
+      if (error.code) {
+        enqueueSnackbar(error.code, {
+          variant: "error",
         });
-
-      // If the error status is 400 - invalid details
-      if (error.response.status === 400) {
-        const { invalidFormItem, validationErrorMsg } = error?.response?.data;
-
-        // Set form error
-        setError({
-          errorKey: invalidFormItem,
-          errorValue: validationErrorMsg,
-        });
-
-        // Notify user about error
-        return enqueueSnackbar(validationErrorMsg, { variant: "error" });
-      }
-
-      // If the error status = 401 - Unauthorized
-      if (error.response.status === 401) {
-        return enqueueSnackbar(error.response.data.msg, { variant: "error" });
-      }
-
-      // If the error status = 401 - Unauthorized
-      if (error.response.status === 500) {
-        return enqueueSnackbar(
-          "There was a problem on the server, please try again later.",
-          { variant: "error" }
+      } else {
+        enqueueSnackbar(
+          "Something went wrong on the server, try again later.",
+          {
+            variant: "error",
+          }
         );
       }
     } finally {

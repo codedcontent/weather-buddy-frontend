@@ -4,16 +4,13 @@ import { Link } from "react-router-dom";
 import NoAccount from "pages/account/NoAccount";
 import AccountDetails from "pages/account/AccountDetails";
 import UserContext from "contexts/UserContext";
-import useAxiosPrivate from "hooks/useAxiosPrivate";
+import axios from "api/axios";
 
 const MyAccount = () => {
   const { user, setUser } = useContext(UserContext);
 
-  const axiosPrivate = useAxiosPrivate();
-
   const [navExpanded, setNavExpanded] = useState(false);
-  // const hasAccount = user?.user_id && true;
-  const hasAccount = true;
+  const hasAccount = user?.user_id && true;
 
   // UseEffect to run once the app loads up
   useEffect(() => {
@@ -25,7 +22,7 @@ const MyAccount = () => {
 
     const getUserDetails = async () => {
       try {
-        const response = await axiosPrivate.get(USERS_URL, {
+        const response = await axios.get(USERS_URL, {
           signal: controller.signal,
         });
 
@@ -42,7 +39,7 @@ const MyAccount = () => {
       isMounted = false;
       controller.abort();
     };
-  }, [axiosPrivate, setUser, user.user_id]);
+  }, [setUser, user.user_id]);
 
   return (
     <div className="h-screen w-full px-10 relative">

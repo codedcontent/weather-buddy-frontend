@@ -31,7 +31,9 @@ const TextField = ({
   return (
     <div
       onClick={() => {
-        handleClick();
+        if (typeof handleClick === "function") {
+          handleClick();
+        }
       }}
     >
       <div

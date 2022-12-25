@@ -5,6 +5,7 @@ import rainyBackground from "assets/rainy-unsplash.jpg";
 import snowyBackground from "assets/snow-unsplash.jpg";
 import drizzleBackground from "assets/drizzle-unsplash.jpg";
 import fogBackground from "assets/fog-unsplash.jpg";
+import loadingBackground from "assets/loadingBackground.jpg";
 
 const weatherImages = {
   drizzle: {
@@ -30,6 +31,9 @@ const weatherImages = {
   },
   clear: {
     image: sunnyBackground,
+  },
+  loading: {
+    image: loadingBackground,
   },
 };
 

@@ -1,8 +1,10 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import "./index.css";
-import App from "./App";
+// eslint-disable-next-line
+import app from "lib/firebase";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import App from "./App";
 import MyAccount from "pages/account/MyAccount";
 import AccountEdit from "pages/account/AccountEdit";
 import SignUp from "pages/SignUp";
@@ -12,9 +14,7 @@ import ResetPassword from "pages/ResetPassword";
 import Pricing from "pages/pricing/Pricing ";
 import { SnackbarProvider } from "notistack";
 import { UserProvider } from "contexts/UserContext";
-import { AuthProvider } from "contexts/AuthProvider";
 import RequireAuth from "components/RequireAuth";
-import PersistLogin from "components/PersistLogin";
 
 const WeatherBuddyApp = () => {
   return (
@@ -27,22 +27,21 @@ const WeatherBuddyApp = () => {
           {/* React router */}
           <Router>
             <Routes>
-              <Route element={<PersistLogin />}>
-                <Route element={<RequireAuth />}>
-                  {/* My account Edit */}
-                  <Route
-                    element={<AccountEdit />}
-                    path="/my-account/edit"
-                    exact
-                  />
-                </Route>
+              <Route element={<App />} path="/" exact />
+
+              <Route element={<RequireAuth />}>
+                {/* My account Edit */}
+                <Route
+                  element={<AccountEdit />}
+                  path="/my-account/edit"
+                  exact
+                />
               </Route>
 
               {/* My account */}
               <Route element={<MyAccount />} path="/my-account" />
 
               {/* Home */}
-              <Route element={<App />} path="/" exact />
 
               {/* Login Route */}
               <Route element={<Login />} path="/login" />
@@ -79,8 +78,6 @@ const WeatherBuddyApp = () => {
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <UserProvider>
-    <AuthProvider>
-      <WeatherBuddyApp />
-    </AuthProvider>
+    <WeatherBuddyApp />
   </UserProvider>
 );
