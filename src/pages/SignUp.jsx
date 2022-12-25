@@ -69,7 +69,7 @@ const SignUp = () => {
         form.password
       );
 
-      setUser(user.user);
+      setUser({ uid: user.user.uid, email: user.user.email });
 
       const formDetails = {
         first_name: form.firstName,

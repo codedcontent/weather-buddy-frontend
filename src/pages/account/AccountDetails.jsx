@@ -5,18 +5,14 @@ import TrackLocationWidget from "components/TrackLocationWidget";
 import short from "short-uuid";
 
 const AccountDetails = () => {
-  const { user } = useContext(UserContext);
-
-  const [trackingDetails, setTrackingDetails] = useState(
-    user?.trackingDetails ? user.trackingDetails : []
-  );
+  const { user, setUser } = useContext(UserContext);
 
   const [openTrackingWidget, setOpenTrackingWidget] = useState(false);
 
   return (
-    <div className="h-full w-full pt-20 px-5 space-y-10">
+    <div className="h-full w-full pt-28 px-5 space-y-10">
       {/* Account Details */}
-      <div className="mb-10">
+      <section className="mb-10">
         <div className="w-full flex justify-between items-center">
           <p className="font-black text-3xl w-max">Account Details</p>
           <Link
@@ -40,37 +36,46 @@ const AccountDetails = () => {
             Email Address: {user?.email}
           </p>
         </div>
-      </div>
+      </section>
 
       {/* Locations to track container */}
       <section className="w-full">
         <p className="font-black text-3xl">Your tracking locations</p>
 
-        {user?.tracking_details?.length > 0 ? (
-          ""
+        {user?.trackingDetails?.length > 0 ? (
+          // Show tracking location widget
+          <TrackLocationWidget
+            trackingDetails={user?.trackingDetails}
+            setTrackingDetails={setUser}
+          />
         ) : (
           <div className="w-full bg-gray-100">
-            {trackingDetails.length === 0 ? (
+            {user?.trackingDetails?.length === 0 ? (
               <p className="font-light text-sm w-max">
                 You aren't tracking any locations.{" "}
                 <span
                   className="underline cursor-pointer text-primary text-bold"
                   onClick={() => {
-                    setTrackingDetails([
-                      {
-                        location: { id: short.generate(), value: "" },
-                        times: [{ id: short.generate(), value: "" }],
-                      },
-                    ]);
+                    setUser((prev) => ({
+                      ...prev,
+                      trackingDetails: [
+                        ...prev.trackingDetails,
+                        {
+                          location: { id: short.generate(), value: "" },
+                          times: [{ id: short.generate(), value: "" }],
+                        },
+                      ],
+                    }));
                   }}
                 >
                   Track Some
                 </span>
               </p>
             ) : (
+              // Show tracking location widget
               <TrackLocationWidget
-                trackingDetails={trackingDetails}
-                setTrackingDetails={setTrackingDetails}
+                trackingDetails={user?.trackingDetails}
+                setTrackingDetails={setUser}
               />
             )}
           </div>

@@ -13,10 +13,11 @@ function App() {
     lon: "",
   });
 
+  // Effect to show weather buddy welcome screen
   useEffect(() => {
     const welcomeBuddyTimer = setTimeout(() => {
       setShowWelcomePage(false);
-    }, 4000);
+    }, 2000);
 
     return () => clearTimeout(welcomeBuddyTimer);
   }, []);
@@ -84,7 +85,7 @@ function App() {
       {showWelcomePage ? (
         <WelcomeToWeatherBuddy />
       ) : (
-        <Home location={location} />
+        <>{location.lat && location.lon && <Home location={location} />}</>
       )}
     </div>
   );

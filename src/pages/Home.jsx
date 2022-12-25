@@ -23,29 +23,6 @@ const Home = ({ location }) => {
     setSearchBoxOpen(true);
   };
 
-  // Effect to load weather details
-  useEffect(() => {
-    getWeatherDetails(location.lat, location.lon, location.title);
-
-    const intervalId = setInterval(() => {
-      getWeatherDetails(location.lat, location.lon, location.title);
-    }, [60000 * 30]);
-
-    return () => clearInterval(intervalId);
-    // eslint-disable-next-line
-  }, []);
-
-  // Act as a clock
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      // Update time
-      const usersTime = moment().format("LLLL");
-      setTime(usersTime);
-    }, [10000]);
-
-    return () => clearInterval(intervalId);
-  }, []);
-
   const getWeatherDetails = async (lat, long, title) => {
     const openWeatherApiKey = process.env.REACT_APP_OW_AK;
     const exclude = ["alerts"];
@@ -81,6 +58,25 @@ const Home = ({ location }) => {
       console.log({ error });
     }
   };
+
+  // Effect to load weather details
+  useEffect(() => {
+    getWeatherDetails(location.lat, location.lon, location.title);
+    if (location.lat && location.long) {
+    }
+    // eslint-disable-next-line
+  }, []);
+
+  // Act as a clock
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      // Update time
+      const usersTime = moment().format("LLLL");
+      setTime(usersTime);
+    }, [10000]);
+
+    return () => clearInterval(intervalId);
+  }, []);
 
   return (
     <div

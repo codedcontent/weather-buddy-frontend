@@ -18,17 +18,17 @@ import axios from "api/axios";
  * The UI should start behaving wonky
  */
 
-const TrackLocationWidget = ({ trackingDetails, setTrackingDetails }) => {
+const TrackLocationWidget = ({
+  trackingDetails,
+  setTrackingDetails: setUser,
+}) => {
   const { user } = useContext(UserContext);
-
-  // console.log(user);
 
   const subs_plan = user?.subscription_plan;
 
   const [showTimeFields, setShowTimeFields] = useState(false);
   const [fetching, setFetching] = useState(false);
   const [currentActiveInput, setCurrentActiveInput] = useState(null);
-
   const { enqueueSnackbar } = useSnackbar();
 
   // Add an alert time for a location
@@ -93,7 +93,7 @@ const TrackLocationWidget = ({ trackingDetails, setTrackingDetails }) => {
     locationsNotToAddTime.splice(indexOfChangingLocation, 0, locationToAddTime);
 
     // Set the new tracking details
-    setTrackingDetails(locationsNotToAddTime);
+    setUser(locationsNotToAddTime);
   };
 
   // Delete an alert time for a location
@@ -123,7 +123,7 @@ const TrackLocationWidget = ({ trackingDetails, setTrackingDetails }) => {
     );
 
     // Set the state for the new tracking details
-    setTrackingDetails([...locationsToNotRemoveTime, locationToRemoveTime]);
+    setUser([...locationsToNotRemoveTime, locationToRemoveTime]);
   };
 
   // Add a new location to track
@@ -153,13 +153,16 @@ const TrackLocationWidget = ({ trackingDetails, setTrackingDetails }) => {
      */
 
     // Add a new location to the list of locations being tracked
-    setTrackingDetails((prev) => [
+    setUser((prev) => ({
       ...prev,
-      {
-        location: { id: short.generate(), value: "" },
-        times: [{ id: short.generate(), value: "" }],
-      },
-    ]);
+      trackingDetails: [
+        ...prev.trackingDetails,
+        {
+          location: { id: short.generate(), value: "" },
+          times: [{ id: short.generate(), value: "" }],
+        },
+      ],
+    }));
   };
 
   // Delete a location to track
@@ -171,13 +174,15 @@ const TrackLocationWidget = ({ trackingDetails, setTrackingDetails }) => {
     );
 
     // Set the new tracking details
-    setTrackingDetails(newTrackingDetails);
+    setUser(newTrackingDetails);
   };
 
   const handleChange = (type, value, inputId) => {
     if (fetching) return false;
 
     const { locationIndex, timeId } = inputId;
+
+    console.log(locationIndex, timeId);
 
     // Get the location that is being edited from the list of locations
     const locationBeingEdited = trackingDetails[locationIndex];
@@ -202,7 +207,10 @@ const TrackLocationWidget = ({ trackingDetails, setTrackingDetails }) => {
 
     locationsNotBeingEdited.splice(locationIndex, 0, locationBeingEdited);
 
-    setTrackingDetails(locationsNotBeingEdited);
+    setUser((prev) => ({
+      ...prev,
+      trackingDetails: [...prev.trackingDetails, locationsNotBeingEdited],
+    }));
   };
 
   // Submit the new tracking details to backend
@@ -213,9 +221,10 @@ const TrackLocationWidget = ({ trackingDetails, setTrackingDetails }) => {
     const { trackingDetails: tracks, ...userDetails } = user;
 
     try {
-      const response = await axios.post("/weather", {
-        user: { userDetails, trackingDetails },
-      });
+      const response = await axios.post(
+        `/weather/${user?.uid}`,
+        trackingDetails
+      );
 
       console.log(response.data);
     } catch (error) {
@@ -231,108 +240,51 @@ const TrackLocationWidget = ({ trackingDetails, setTrackingDetails }) => {
 
   return (
     <div className="space-y-2 relative">
-      {trackingDetails.map((trackingDetail, x) => (
-        <div className="w-1/2" key={x}>
-          {/* Add locations to track */}
-          <div className="w-full">
-            <p className="font-bold text-sm ml-3 text-primary">
-              Type location you wish to track
-            </p>
+      {trackingDetails?.map((trackingDetail, x) => {
+        return (
+          <div className="w-1/2" key={x}>
+            {/* Add locations to track */}
+            <div className="w-full">
+              <p className="font-bold text-sm ml-3 text-primary">
+                Type location you wish to track
+              </p>
 
-            <div className="w-full mt-1 ml-3 relative">
-              {/* Text field for locations */}
-              <div className="flex gap-5 justify-between items-center w-full ">
-                <div className="flex-1">
-                  {/* Textfield */}
-                  <TextField
-                    title={`Location ${x + 1}`}
-                    value={
-                      !trackingDetail.location.value?.title
-                        ? trackingDetail.location.value
-                        : trackingDetail.location.value.title
-                    }
-                    inputId={{ locationIndex: x }}
-                    handleChange={handleChange}
-                    disabled={fetching}
-                    handleClick={() =>
-                      setCurrentActiveInput({
-                        locationIndex: x,
-                      })
-                    }
-                  />
-                </div>
-
-                {/* Add location */}
-                {trackingDetails.length === x + 1 && (
-                  <AddAlertIcon
-                    onClick={() => {
-                      addLocation(x);
-                    }}
-                    className="text-green-500 cursor-pointer"
-                  />
-                )}
-
-                {/* Delete location */}
-                <DeleteIcon
-                  onClick={() => deleteLocation(trackingDetail.location.id)}
-                  className="text-red-500 cursor-pointer"
-                />
-              </div>
-
-              {/* The suggestions for the input fields */}
-              {currentActiveInput &&
-              JSON.stringify(currentActiveInput) ===
-                JSON.stringify({ locationIndex: x }) ? (
-                <TrackingSuggestions
-                  type="location"
-                  id={{ locationIndex: x }}
-                  setValue={handleChange}
-                  value={trackingDetail.location.value}
-                  handleVisibility={setCurrentActiveInput}
-                />
-              ) : null}
-            </div>
-          </div>
-
-          {/* Add times to track locations */}
-          <div>
-            <p className="ml-10 font-light text-sm text-primary">
-              Add times to get weather alerts on this location
-            </p>
-
-            {trackingDetail.times.map((time, i) => (
-              <div className="ml-10 w-[60%] relative" key={i}>
-                <div className="flex gap-5 justify-between items-center w-full">
-                  {/* Time text field */}
+              <div className="w-full mt-1 ml-3 relative">
+                {/* Text field for locations */}
+                <div className="flex gap-5 justify-between items-center w-full ">
                   <div className="flex-1">
+                    {/* Textfield */}
                     <TextField
-                      title={`Time ${i + 1}`}
-                      value={time.value}
-                      // handleChange={handleChange}
+                      title={`Location ${x + 1}`}
+                      value={
+                        !trackingDetail?.location?.value?.title
+                          ? trackingDetail?.location?.value
+                          : trackingDetail?.location?.value?.title
+                      }
+                      inputId={{ locationIndex: x }}
+                      handleChange={handleChange}
                       disabled={fetching}
                       handleClick={() =>
                         setCurrentActiveInput({
                           locationIndex: x,
-                          timeId: i,
                         })
                       }
                     />
                   </div>
 
-                  {/* Add more button */}
-                  {trackingDetail.times.length === i + 1 && (
+                  {/* Add location */}
+                  {trackingDetails.length === x + 1 && (
                     <AddAlertIcon
-                      className="text-green-500 cursor-pointer"
                       onClick={() => {
-                        addNewLocationTime(trackingDetail.location.id);
+                        addLocation(x);
                       }}
+                      className="text-green-500 cursor-pointer"
                     />
                   )}
 
+                  {/* Delete location */}
                   <DeleteIcon
-                    onClick={() => {
-                      deleteLocationTime(trackingDetail.location.id, time.id);
-                    }}
+                    onClick={() => deleteLocation(trackingDetail.location.id)}
                     className="text-red-500 cursor-pointer"
                   />
                 </div>
@@ -340,20 +292,81 @@ const TrackLocationWidget = ({ trackingDetails, setTrackingDetails }) => {
                 {/* The suggestions for the input fields */}
                 {currentActiveInput &&
                 JSON.stringify(currentActiveInput) ===
-                  JSON.stringify({ locationIndex: x, timeId: i }) ? (
+                  JSON.stringify({ locationIndex: x }) ? (
                   <TrackingSuggestions
-                    type="time"
-                    id={{ locationIndex: x, timeId: i }}
+                    type="location"
+                    id={{ locationIndex: x }}
                     setValue={handleChange}
+                    value={trackingDetail.location.value}
                     handleVisibility={setCurrentActiveInput}
-                    listOfTimes={trackingDetail.times.map((time) => time.value)}
                   />
                 ) : null}
               </div>
-            ))}
+            </div>
+
+            {/* Add times to track locations */}
+            <div>
+              <p className="ml-10 font-light text-sm text-primary">
+                Add times to get weather alerts on this location
+              </p>
+
+              {trackingDetail?.times?.map((time, i) => (
+                <div className="ml-10 w-[60%] relative" key={i}>
+                  <div className="flex gap-5 justify-between items-center w-full">
+                    {/* Time text field */}
+                    <div className="flex-1">
+                      <TextField
+                        title={`Time ${i + 1}`}
+                        value={time.value}
+                        // handleChange={handleChange}
+                        disabled={fetching}
+                        handleClick={() =>
+                          setCurrentActiveInput({
+                            locationIndex: x,
+                            timeId: i,
+                          })
+                        }
+                      />
+                    </div>
+
+                    {/* Add more button */}
+                    {trackingDetail.times.length === i + 1 && (
+                      <AddAlertIcon
+                        className="text-green-500 cursor-pointer"
+                        onClick={() => {
+                          addNewLocationTime(trackingDetail.location.id);
+                        }}
+                      />
+                    )}
+
+                    <DeleteIcon
+                      onClick={() => {
+                        deleteLocationTime(trackingDetail.location.id, time.id);
+                      }}
+                      className="text-red-500 cursor-pointer"
+                    />
+                  </div>
+
+                  {/* The suggestions for the input fields */}
+                  {currentActiveInput &&
+                  JSON.stringify(currentActiveInput) ===
+                    JSON.stringify({ locationIndex: x, timeId: i }) ? (
+                    <TrackingSuggestions
+                      type="time"
+                      id={{ locationIndex: x, timeId: i }}
+                      setValue={handleChange}
+                      handleVisibility={setCurrentActiveInput}
+                      listOfTimes={trackingDetail.times.map(
+                        (time) => time.value
+                      )}
+                    />
+                  ) : null}
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
 
       <button
         disabled={fetching}

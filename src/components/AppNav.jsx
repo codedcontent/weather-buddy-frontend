@@ -1,10 +1,15 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import weatherBuddyLogo from "assets/weather-bear-icon.svg";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import { useNavigate } from "react-router-dom";
+import UserContext from "contexts/UserContext";
+import { getAuth, signOut } from "firebase/auth";
+import { useSnackbar } from "notistack";
 
 const AppNav = ({ appNavState }) => {
   const navigate = useNavigate();
+  const { enqueueSnackbar } = useSnackbar();
+  const { user } = useContext(UserContext);
 
   const [navExpanded, setNavExpanded] = useState(false);
 
@@ -19,6 +24,17 @@ const AppNav = ({ appNavState }) => {
   // Open account page
   const gotToMyAccount = () => {
     navigate("/my-account");
+  };
+
+  const logOutUser = async () => {
+    const auth = getAuth();
+
+    try {
+      await signOut(auth);
+      enqueueSnackbar("You are now logged out", { variant: "warning" });
+    } catch (error) {
+      enqueueSnackbar(error?.message, { variant: "error" });
+    }
   };
 
   const AppNavNotExpanded = () => {
@@ -58,6 +74,15 @@ const AppNav = ({ appNavState }) => {
           >
             My Account
           </p>
+
+          {user?.uid && (
+            <p
+              className="text-xs pr-4 pb-1 hover:underline text-primary-100 font-black cursor-pointer"
+              onClick={logOutUser}
+            >
+              Logout
+            </p>
+          )}
         </div>
       </div>
     );

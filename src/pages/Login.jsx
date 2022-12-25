@@ -47,7 +47,7 @@ const Login = () => {
       );
 
       // Set global user variable
-      setUser({ ...user.user });
+      setUser({ uid: user.user.uid, email: user.user.email });
 
       enqueueSnackbar("Login successful.", { variant: "success" });
 
