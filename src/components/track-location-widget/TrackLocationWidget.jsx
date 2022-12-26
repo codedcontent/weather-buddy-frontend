@@ -17,20 +17,14 @@ import TrackLocationTimes from "./TrackLocationTimes";
 
 const TrackLocationWidget = ({}) => {
   const { user, setUser } = useContext(UserContext);
-
-  const subs_plan = user?.subscription_plan;
-
-  const [showTimeFields, setShowTimeFields] = useState(false);
-  const [fetching, setFetching] = useState(false);
   const { enqueueSnackbar } = useSnackbar();
 
-  // Add an alert time for a location
+  // State variable declaration
+  const [showTimeFields, setShowTimeFields] = useState(false);
+  const [fetching, setFetching] = useState(false);
 
-  // Delete an alert time for a location
-
-  // Add a new location to track
-
-  // Delete a location to track
+  // non-state variable declaration
+  const subs_plan = user?.subscription_plan;
 
   // Submit the new tracking details to backend
   const handleSubmit = async () => {
@@ -97,7 +91,6 @@ const TrackLocationWidget = ({}) => {
         </p>
       ) : (
         <>
-          {console.log(user)}
           {user?.trackingDetails?.map((_, locationIndex) => (
             <TrackLocationTimes
               key={locationIndex}

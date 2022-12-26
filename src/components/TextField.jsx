@@ -5,10 +5,8 @@ const TextField = ({
   value,
   handleChange,
   title,
-  type,
   error,
   disabled,
-  inputId,
   handleClick,
 }) => {
   const [inputActive, setInputActive] = useState(false);
@@ -56,7 +54,7 @@ const TextField = ({
             setInputActive(false);
           }}
           onChange={(e) => {
-            handleChange(type, e.target.value, inputId);
+            handleChange(e.target.value);
           }}
           placeholder={placeholder}
           disabled={disabled}

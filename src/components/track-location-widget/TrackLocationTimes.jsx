@@ -11,12 +11,12 @@ const TrackLocationTimes = ({ locationIndex, fetching }) => {
   const { user, setUser } = useContext(UserContext);
   const { enqueueSnackbar } = useSnackbar();
 
-  const [currentActiveInput, setCurrentActiveInput] = useState(null);
-  const [activeLocation, setActiveLocation] = useState(0);
+  const [activeLocation, setActiveLocation] = useState(null);
 
   // Non-state declarations
   const locationTimes = user?.trackingDetails[locationIndex]?.times;
   const trackingDetail = user?.trackingDetails[locationIndex];
+  const trackingDetails = user?.trackingDetails;
   const subs_plan = user?.subscription_plan;
 
   /**
@@ -44,6 +44,7 @@ const TrackLocationTimes = ({ locationIndex, fetching }) => {
     return true;
   };
 
+  // Add a location to track
   const addLocation = () => {
     // Check the users subscription plan
     const isValidOperation = manageSubscriptionPlanLimits();
@@ -64,7 +65,41 @@ const TrackLocationTimes = ({ locationIndex, fetching }) => {
 
     setUser((prev) => ({
       ...prev,
-      trackingDetails: { ...prev.trackingDetails, ...newTrackingDetail },
+      trackingDetails: [...prev.trackingDetails, newTrackingDetail],
+    }));
+  };
+
+  // Delete a location to track
+  const deleteLocation = () => {
+    // Prevent deletion of every single location to track
+    if (trackingDetails.length === 1) return;
+
+    // Delete selected tracking location
+    setUser((prev) => ({
+      ...prev,
+      trackingDetails: [
+        ...prev.trackingDetails.filter(
+          (_, detailIndex) => detailIndex !== locationIndex
+        ),
+      ],
+    }));
+  };
+
+  // Handle changes to location input field
+  const handleChange = (value) => {
+    // update the tracking detail object
+    trackingDetail.title = value;
+    // trackingDetail.coord = coord;
+
+    // Add the updated tracking detail to user app state
+    setUser((prev) => ({
+      ...prev,
+      trackingDetails: [
+        ...prev.trackingDetails.filter(
+          (_, detailIndex) => detailIndex !== locationIndex
+        ),
+        trackingDetail,
+      ],
     }));
   };
 
@@ -82,18 +117,10 @@ const TrackLocationTimes = ({ locationIndex, fetching }) => {
               <TextField
                 title={`Location ${locationIndex + 1}`}
                 placeholder="Type a location you wish to track"
-                value={
-                  !trackingDetail?.location?.value?.title
-                    ? trackingDetail?.location?.value
-                    : trackingDetail?.location?.value?.title
-                }
-                inputId={{ locationIndex: locationIndex }}
+                value={trackingDetail?.title}
                 disabled={fetching}
-                handleClick={() =>
-                  setCurrentActiveInput({
-                    locationIndex: locationIndex,
-                  })
-                }
+                handleChange={handleChange}
+                handleClick={() => setActiveLocation(locationIndex)}
               />
             </div>
 
@@ -107,23 +134,18 @@ const TrackLocationTimes = ({ locationIndex, fetching }) => {
 
             {/* Delete location */}
             <DeleteIcon
-              onClick={() =>
-                // deleteLocation(trackingDetail.location.id)
-                {}
-              }
+              onClick={() => deleteLocation()}
               className="text-red-500 cursor-pointer"
             />
           </div>
 
           {/* The suggestions for the input fields */}
-          {currentActiveInput &&
-          JSON.stringify(currentActiveInput) ===
-            JSON.stringify({ locationIndex: locationIndex }) ? (
+          {activeLocation === locationIndex ? (
             <TrackingSuggestions
               type="location"
               id={{ locationIndex: locationIndex }}
               value={trackingDetail.location.value}
-              handleVisibility={setCurrentActiveInput}
+              handleVisibility={setActiveLocation}
             />
           ) : null}
         </div>
