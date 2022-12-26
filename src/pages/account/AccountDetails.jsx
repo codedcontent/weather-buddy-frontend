@@ -1,7 +1,7 @@
 import React, { useContext, useState } from "react";
 import { Link } from "react-router-dom";
 import UserContext from "contexts/UserContext";
-import TrackLocationWidget from "components/TrackLocationWidget";
+import TrackLocationWidget from "components/track-location-widget/TrackLocationWidget";
 import short from "short-uuid";
 
 const AccountDetails = () => {
@@ -42,44 +42,11 @@ const AccountDetails = () => {
       <section className="w-full">
         <p className="font-black text-3xl">Your tracking locations</p>
 
-        {user?.trackingDetails?.length > 0 ? (
-          // Show tracking location widget
-          <TrackLocationWidget
-            trackingDetails={user?.trackingDetails}
-            setTrackingDetails={setUser}
-          />
-        ) : (
-          <div className="w-full bg-gray-100">
-            {user?.trackingDetails?.length === 0 ? (
-              <p className="font-light text-sm w-max">
-                You aren't tracking any locations.{" "}
-                <span
-                  className="underline cursor-pointer text-primary text-bold"
-                  onClick={() => {
-                    setUser((prev) => ({
-                      ...prev,
-                      trackingDetails: [
-                        ...prev.trackingDetails,
-                        {
-                          location: { id: short.generate(), value: "" },
-                          times: [{ id: short.generate(), value: "" }],
-                        },
-                      ],
-                    }));
-                  }}
-                >
-                  Track Some
-                </span>
-              </p>
-            ) : (
-              // Show tracking location widget
-              <TrackLocationWidget
-                trackingDetails={user?.trackingDetails}
-                setTrackingDetails={setUser}
-              />
-            )}
-          </div>
-        )}
+        {/* Show tracking location widget */}
+        <TrackLocationWidget
+          trackingDetails={user?.trackingDetails}
+          setTrackingDetails={setUser}
+        />
       </section>
 
       {/* Weather Buddy Plan */}
