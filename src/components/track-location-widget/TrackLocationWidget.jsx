@@ -51,10 +51,6 @@ const TrackLocationWidget = ({}) => {
     }
   };
 
-  /**
-   * Redoing the code start
-   */
-
   const addTrackingLocation = () => {
     setUser((prev) => ({
       ...prev,
