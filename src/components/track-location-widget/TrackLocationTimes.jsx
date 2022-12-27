@@ -24,18 +24,18 @@ const TrackLocationTimes = ({ locationIndex, fetching }) => {
    */
   // Limit locations/times to track based on subscription plan
   const manageSubscriptionPlanLimits = () => {
-    if (subs_plan === "free" && trackingDetail.length === 1) {
+    if (subs_plan === "free" && trackingDetails.length === 1) {
       enqueueSnackbar("Upgrade your plan to track more locations.", {
         variant: "info",
       });
       return false;
-    } else if (subs_plan === "dove" && trackingDetail.length === 3) {
+    } else if (subs_plan === "dove" && trackingDetails.length === 3) {
       enqueueSnackbar("Upgrade your plan to track more locations.", {
         variant: "info",
       });
       return false;
-    } else if (subs_plan === "lion" && trackingDetail.length === 5) {
-      enqueueSnackbar("Upgrade your plan to track more locations.", {
+    } else if (subs_plan === "lion" && trackingDetails.length === 5) {
+      enqueueSnackbar("You can't track anymore locations.", {
         variant: "info",
       });
       return false;

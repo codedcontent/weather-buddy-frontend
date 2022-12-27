@@ -19,6 +19,8 @@ const TrackingTime = ({ timeIndex, locationIndex, fetching }) => {
   const subs_plan = user?.subscription_plan;
   const time = user?.trackingDetails[locationIndex]?.times[timeIndex];
   const locationTimes = user?.trackingDetails[locationIndex]?.times;
+  const trackingDetails = user?.trackingDetails;
+  const trackingDetail = user?.trackingDetails[locationIndex];
 
   /**
    * Function declarations
@@ -37,9 +39,6 @@ const TrackingTime = ({ timeIndex, locationIndex, fetching }) => {
       });
       return false;
     } else if (subs_plan === "lion" && locationTimes.length === 4) {
-      enqueueSnackbar("Upgrade your plan to track more locations.", {
-        variant: "info",
-      });
       return false;
     }
 
@@ -48,32 +47,32 @@ const TrackingTime = ({ timeIndex, locationIndex, fetching }) => {
 
   // Add new time to track
   const addTime = () => {
-    // Check the users subscription plan
-    const isValidOperation = manageSubscriptionPlanLimits();
+    // Ensure user can only set 4 alerts
+    if (locationTimes.length === 4)
+      return enqueueSnackbar("You can't add anymore alerts.", {
+        variant: "info",
+      });
 
-    if (!isValidOperation) return;
+    // Get the tracking details that the user will no be editing
+    const trackingLocationsNotBeingEdited = [
+      ...trackingDetails.filter(
+        (_, trackingDataIndex) => trackingDataIndex !== locationIndex
+      ),
+    ];
 
-    // console.log("Adding time");
-    const trackingDetails = user?.trackingDetails;
+    /**
+     * Update, via splicing, the trackingLocationsNotBeingEdited
+     * Add the new time for that location
+     */
+    trackingLocationsNotBeingEdited.splice(locationIndex, 0, {
+      ...trackingDetail,
+      times: [...trackingDetail.times, ""],
+    });
 
     setUser((prev) => {
       return {
         ...prev,
-        trackingDetails: [
-          // The tracking details that was not changed
-          ...trackingDetails.splice(locationIndex, 1, {
-            ...trackingDetails[locationIndex],
-            times: [...locationTimes, ""],
-          }),
-
-          // The tracking details that was changed
-          // ...prev.trackingDetails
-          //   .filter((_, detailIndex) => detailIndex === locationIndex)
-          //   .map((detailData) => ({
-          //     ...detailData,
-          //     times: [...detailData.times, ""],
-          //   })),
-        ],
+        trackingDetails: [...trackingLocationsNotBeingEdited],
       };
     });
   };
@@ -83,27 +82,32 @@ const TrackingTime = ({ timeIndex, locationIndex, fetching }) => {
     // Prevent deletion of every single location to track
     if (locationTimes.length === 1) return;
 
-    setUser((prev) => ({
-      ...prev,
-      trackingDetails: [
-        // The tracking details that was changed
-        ...prev.trackingDetails
-          .filter((_, detailIndex) => detailIndex === locationIndex)
-          .map((detailData) => ({
-            ...detailData,
-            times: [
-              ...detailData.times.filter(
-                (_, timeDetailIndex) => timeDetailIndex !== timeIndex
-              ),
-            ],
-          })),
+    // Get the tracking details that the user will no be editing
+    const trackingLocationsNotBeingEdited = [
+      ...trackingDetails.filter(
+        (_, trackingDataIndex) => trackingDataIndex !== locationIndex
+      ),
+    ];
 
-        // The tracking details that was not changed
-        ...prev.trackingDetails.filter(
-          (_, detailIndex) => detailIndex !== locationIndex
+    /**
+     * Update, via splicing, the trackingLocationsNotBeingEdited
+     * Add the new time for that location
+     */
+    trackingLocationsNotBeingEdited.splice(locationIndex, 0, {
+      ...trackingDetail,
+      times: [
+        ...trackingDetail.times.filter(
+          (_, timeDataIndex) => timeDataIndex !== timeIndex
         ),
       ],
-    }));
+    });
+
+    setUser((prev) => {
+      return {
+        ...prev,
+        trackingDetails: [...trackingLocationsNotBeingEdited],
+      };
+    });
   };
 
   return (
@@ -145,12 +149,11 @@ const TrackingTime = ({ timeIndex, locationIndex, fetching }) => {
       </div>
 
       {/* The suggestions for the input fields */}
-      {activeTime &&
-      JSON.stringify(activeTime) ===
-        JSON.stringify({ locationIndex: locationIndex, timeId: timeIndex }) ? (
+
+      {activeTime === timeIndex ? (
         <TrackingSuggestions
           type="time"
-          id={{ locationIndex: locationIndex, timeId: timeIndex }}
+          id={{ timeIndex }}
           handleVisibility={setActiveTime}
           listOfTimes={locationTimes.map((time) => time.value)}
         />
