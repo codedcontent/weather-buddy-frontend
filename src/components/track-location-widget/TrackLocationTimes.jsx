@@ -86,11 +86,8 @@ const TrackLocationTimes = ({ locationIndex, fetching }) => {
   };
 
   // Handle changes to location input field
+  // console.log({ trackingDetails });
   const handleChange = (value) => {
-    // update the tracking detail object
-    trackingDetail.title = value;
-    // trackingDetail.coord = coord;
-
     // Add the updated tracking detail to user app state
     setUser((prev) => ({
       ...prev,
@@ -98,7 +95,13 @@ const TrackLocationTimes = ({ locationIndex, fetching }) => {
         ...prev.trackingDetails.filter(
           (_, detailIndex) => detailIndex !== locationIndex
         ),
-        trackingDetail,
+        {
+          location: {
+            title: value.title ? value.title : value,
+            coord: value.coord,
+          },
+          times: locationTimes,
+        },
       ],
     }));
   };
@@ -117,7 +120,7 @@ const TrackLocationTimes = ({ locationIndex, fetching }) => {
               <TextField
                 title={`Location ${locationIndex + 1}`}
                 placeholder="Type a location you wish to track"
-                value={trackingDetail?.title}
+                value={trackingDetail?.location?.title}
                 disabled={fetching}
                 handleChange={handleChange}
                 handleClick={() => setActiveLocation(locationIndex)}
@@ -143,9 +146,9 @@ const TrackLocationTimes = ({ locationIndex, fetching }) => {
           {activeLocation === locationIndex ? (
             <TrackingSuggestions
               type="location"
-              id={{ locationIndex: locationIndex }}
-              value={trackingDetail.location.value}
+              value={trackingDetail.location.title}
               handleVisibility={setActiveLocation}
+              setValue={handleChange}
             />
           ) : null}
         </div>
