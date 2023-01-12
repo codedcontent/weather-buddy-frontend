@@ -14,20 +14,49 @@ import Login from "pages/Login";
 import ForgotPassword from "pages/ForgotPasword";
 import ResetPassword from "pages/ResetPassword";
 import Pricing from "pages/pricing/Pricing ";
-import { SnackbarProvider } from "notistack";
+import { SnackbarProvider, useSnackbar } from "notistack";
 import UserContext, { UserProvider } from "contexts/UserContext";
 import RequireAuth from "components/RequireAuth";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { CircularProgress } from "@mui/material";
+import axios from "api/axios";
 
 const WeatherBuddyApp = () => {
+  // const { enqueueSnackbar } = useSnackbar();
+
   const { user, setUser } = useContext(UserContext);
 
+  // UseEffect to load the users authentication details
   useEffect(() => {
     const auth = getAuth();
 
+    // Get the users details
+    const getUserDetails = async (user) => {
+      const USERS_URL = `/users/${user.uid}`;
+
+      try {
+        const response = await axios.get(USERS_URL);
+
+        console.log(response.data);
+
+        // Set the users details
+        setUser({ uid: user.uid, email: user.email, ...response.data });
+      } catch (error) {
+        console.error(error);
+        if (error.code) {
+          // enqueueSnackbar(error.code, { variant: "error" });
+        } else {
+          // enqueueSnackbar("Error getting details, try again later.", {
+          //   variant: "error",
+          // });
+        }
+      }
+    };
+
     onAuthStateChanged(auth, (user) => {
       if (user) {
-        setUser({ uid: user.uid, email: user.email });
+        getUserDetails(user);
+        // setUser({  });
 
         // Fetch the user details from server
       } else {
@@ -36,13 +65,16 @@ const WeatherBuddyApp = () => {
     });
     // eslint-disable-next-line
   }, []);
+
+  // UseEffect to load the users
+
   return (
     <React.StrictMode>
-      {user !== undefined && (
+      {user !== undefined ? (
         <div>
           <SnackbarProvider
             maxSnack={3}
-            anchorOrigin={{ horizontal: "center", vertical: "top" }}
+            anchorOrigin={{ horizontal: "right", vertical: "top" }}
           >
             {/* React router */}
             <Router>
@@ -57,10 +89,10 @@ const WeatherBuddyApp = () => {
                     path="/my-account/edit"
                     exact
                   />
-                </Route>
 
-                {/* My account */}
-                <Route element={<MyAccount />} path="/my-account" />
+                  {/* My account */}
+                  <Route element={<MyAccount />} path="/my-account" />
+                </Route>
 
                 {/* Home */}
 
@@ -91,6 +123,10 @@ const WeatherBuddyApp = () => {
               </Routes>
             </Router>
           </SnackbarProvider>
+        </div>
+      ) : (
+        <div className="h-screen w-screen grid place-items-center">
+          <CircularProgress />
         </div>
       )}
     </React.StrictMode>

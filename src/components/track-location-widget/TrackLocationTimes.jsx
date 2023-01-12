@@ -86,7 +86,6 @@ const TrackLocationTimes = ({ locationIndex, fetching }) => {
   };
 
   // Handle changes to location input field
-  // console.log({ trackingDetails });
   const handleChange = (value) => {
     // Add the updated tracking detail to user app state
     setUser((prev) => ({

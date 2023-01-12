@@ -7,12 +7,13 @@ import Loader from "components/Loader";
 import { useSnackbar } from "notistack";
 import UserContext from "contexts/UserContext";
 import useAxiosPrivate from "hooks/useAxiosPrivate";
+import axios from "api/axios";
 
 const AccountEdit = () => {
   const { user } = useContext(UserContext);
   const navigate = useNavigate();
 
-  const axiosPrivate = useAxiosPrivate();
+  // const axiosPrivate = useAxiosPrivate();
 
   const { enqueueSnackbar } = useSnackbar();
 
@@ -39,49 +40,68 @@ const AccountEdit = () => {
     // Before request is made to the server, display a loader and disable inputs
     setLoadingFetchResult(true);
 
-    // Update users account details
-    try {
-      const raw = JSON.stringify({
-        user_id: user?.user_id,
-        form,
-      });
-
-      const response = await axiosPrivate.patch(`/users/${user?.user_id}`, raw);
-
-      // There are no more input errors, clear error state
+    if (!form.first_name) {
       setError({
-        errorKey: "",
-        errorValue: "",
+        errorKey: "first_name",
+        errorValue: "First name cannot be empty",
       });
-
-      // Users details was updated successfully, remove loader and enable input fields
       setLoadingFetchResult(false);
-
-      // Notify user of successful update
-      enqueueSnackbar(response.data.msg, {
-        variant: "success",
+    } else if (!form.last_name) {
+      setError({
+        errorKey: "last_name",
+        errorValue: "Last name cannot be empty",
       });
+      setLoadingFetchResult(false);
+    } else if (!form.phone) {
+      setError({
+        errorKey: "phone",
+        errorValue: "Phone number cannot be empty",
+      });
+      setLoadingFetchResult(false);
+    } else {
+      // Update users account details
+      try {
+        await axios.patch(`/users/${user?.uid}`, form);
 
-      // Go back to the previous page
-      navigate(-1);
-    } catch (error) {
-      const axiosError = error.response;
-      console.log(axiosError);
+        // There are no more input errors, clear error state
+        setError({
+          errorKey: "",
+          errorValue: "",
+        });
 
-      // Server error
-      if (axiosError.status === 500)
-        return enqueueSnackbar(axiosError.data.msg, { variant: "error" });
+        // Users details was updated successfully, remove loader and enable input fields
+        setLoadingFetchResult(false);
 
-      // Invalid user credentials
-      if (axiosError.status === 400) {
-        // Invalid form inputs error
-        if (axiosError.data.invalidFormItem)
-          return notifyUserOfFormError(axiosError);
+        // Notify user of successful update
+        enqueueSnackbar("Account detail updated successfully", {
+          variant: "success",
+        });
 
-        return enqueueSnackbar(
-          "Encountered a problem while updating, try again later.",
-          { variant: "error" }
-        );
+        // Go back to the previous page
+        navigate(-1);
+      } catch (error) {
+        const axiosError = error.response;
+        console.log(axiosError, error);
+
+        // Server error
+        if (axiosError.status === 500) {
+          return enqueueSnackbar(
+            "Something went wrong on the server, Please try again later",
+            { variant: "error" }
+          );
+        } // Invalid user credentials
+        else if (axiosError.status === 400) {
+          // Invalid form inputs error
+          if (axiosError.data.invalidFormItem)
+            return notifyUserOfFormError(axiosError);
+
+          return enqueueSnackbar(
+            "Encountered a problem while updating, try again later.",
+            { variant: "error" }
+          );
+        }
+      } finally {
+        setLoadingFetchResult(false);
       }
     }
   };

@@ -9,6 +9,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import useAxiosPrivate from "hooks/useAxiosPrivate";
 import useAuth from "hooks/useAuth";
 import Loader from "components/Loader";
+import axios from "api/axios";
 
 const Pricing = () => {
   const { enqueueSnackbar } = useSnackbar();
@@ -40,36 +41,39 @@ const Pricing = () => {
   const initializePayment = usePaystackPayment(config);
 
   const upgradeSubPlan = async () => {
+    console.log("Called");
+
+    const apiURL = `users/plan/${user?.uid}/`;
+    console.log(apiURL);
     try {
-      const response = await axiosPrivate.patch("/sub-plans", {
+      await axios.patch(apiURL, {
         subscription_plan: selectedPricingPlan?.type,
-        user_id: user?.user_id,
       });
 
-      if (!response) return console.log("No response");
-
-      // Set new pricing plan
+      // Set new subscription plan
       setUser((prev) => ({
         ...prev,
         subscription_plan: selectedPricingPlan?.type,
       }));
 
-      enqueueSnackbar(response.data.msg, { variant: "success" });
+      enqueueSnackbar("Subscription plan change successful.", {
+        variant: "success",
+      });
+
+      // Redirect user to my-account page
+      return navigate("/my-account");
     } catch (error) {
       const axiosError = error.response;
 
       enqueueSnackbar(axiosError.msg, { variant: "error" });
     } finally {
       setFetching(false);
-
-      // Redirect user to my-account page
-      return navigate("/my-account");
     }
   };
 
   // Payment successful
-  const onSuccess = (reference) => {
-    enqueueSnackbar("Payment successful.", {
+  const onSuccess = () => {
+    enqueueSnackbar("Payment successful", {
       variant: "success",
     });
 
@@ -91,10 +95,10 @@ const Pricing = () => {
     setFetching(true);
 
     // If no user is logged in, redirect to login
-    if (!user?.user_id || !auth?.accessToken)
+    if (!user?.uid)
       return navigate("/login", { state: { from: location }, replace: true });
 
-    // If the user downgrades to a free account, notify them, then perform the subs_plan change
+    // If the user downgrades to a free account, notify them, then perform the downgrade
     if (selectedPricingPlan?.type === "free") {
       enqueueSnackbar("Downgrading to free plan", { variant: "info" });
 
@@ -105,7 +109,7 @@ const Pricing = () => {
     // Generate a new payment ref for paystack config
     setPaymentRef(shortUUID.generate());
 
-    setUser((prev) => ({ ...prev, email: "user@email.com" }));
+    // setUser((prev) => ({ ...prev, email: user?.email }));
 
     // User is going for a dove or lion sub-plan, initialize the payment
     initializePayment(onSuccess, onClose);
@@ -133,21 +137,13 @@ const Pricing = () => {
     };
 
     // Get user details if no user present but auth accessToken available
-    !user?.user_id && auth?.accessToken && getUserDetails();
+    // !user?.user_id && auth?.accessToken && getUserDetails();
 
     return () => {
       isMounted = false;
       controller.abort();
     };
-  }, [
-    auth?.accessToken,
-    axiosPrivate,
-    location,
-    navigate,
-    setUser,
-    user,
-    user?.user_id,
-  ]);
+  }, []);
 
   useEffect(() => setFetching(false), []);
 
@@ -155,7 +151,7 @@ const Pricing = () => {
     <div className="h-screen w-full flex p-10 lg:px-28 justify-center items-center">
       {/* Subscription plan Description */}
       <div className="space-y-5 w-1/2">
-        {user?.user_id && (
+        {user?.uid && (
           <p className="text-sm font-bold capitalize text-primary">
             Your current plan:{" "}
             <span className="underline cursor-pointer">
