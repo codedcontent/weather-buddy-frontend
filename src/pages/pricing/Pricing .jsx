@@ -41,10 +41,7 @@ const Pricing = () => {
   const initializePayment = usePaystackPayment(config);
 
   const upgradeSubPlan = async () => {
-    console.log("Called");
-
     const apiURL = `users/plan/${user?.uid}/`;
-    console.log(apiURL);
     try {
       await axios.patch(apiURL, {
         subscription_plan: selectedPricingPlan?.type,
